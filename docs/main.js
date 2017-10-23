@@ -130,7 +130,7 @@ function updateInfo() {
             item.img,item.type,item.flavor1,
             item.flavor2,item.flavor3,
             item.quantity,item.price);
-        subtotal += item.price;
+        subtotal += item.price*item.quantity;
         count += 1;
     });
     $("#cart-subTotal").html("$" + subtotal);
