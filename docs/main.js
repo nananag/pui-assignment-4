@@ -29,6 +29,7 @@ function twelveP(flavor1, flavor2, flavor3, quantity, img) {
 
 /*** Global Variables ***/
 var cart = []; //store items put in cart
+var wishlist = []; //store items put in wishlist
 var item = ""; //store flavor of current page
 var img = ""; //store img of current page
 var selection = null;
@@ -59,6 +60,7 @@ function getSelection() {
     }
 }
 
+//instantiate a cart item based on selection
 function makeCartItem(img, packs, flavor1, flavor2, flavor3, quantity, price) {
     var div = $("<div>", {"class": "cart-content"});
 
@@ -107,7 +109,8 @@ function makeCartItem(img, packs, flavor1, flavor2, flavor3, quantity, price) {
         cart.splice($(this).parent().index(),1);
         localStorage.setItem("cart", JSON.stringify(cart));
         $(this).parent().remove();
-        updateInfo();
+        updateCartQuant();
+        console.log("removed cart");
     });
 
     div.append(newImg);
@@ -115,27 +118,113 @@ function makeCartItem(img, packs, flavor1, flavor2, flavor3, quantity, price) {
     div.append(newQuant);
     div.append(newItemTotal);
     div.append(button);
-    $(".cart-container").append(div);
+    return div;
+    //$(".cart-container").append(div);
+}
+
+//instantiate a cart item based on selection
+function makeWishedItem(img, packs, flavor1, flavor2, flavor3, quantity, price) {
+    var div = $("<div>", {"class": "cart-content"});
+
+    var newImg = $("<img>");
+    newImg.attr("src", img);
+
+    var p = $("<p>");
+    var newPacks = $("<span>");
+    newPacks.html(packs);
+    p.append(newPacks);
+
+    if(packs == "Individual"){
+        var newF1 = $("<span>");
+        newF1.html("Flavor: " + flavor1);
+        p.append(newF1);
+    }
+    else{
+        var newF1 = $("<span>");
+        newF1.html("Flavor 1: " + flavor1);
+        var newF2 = $("<span>");
+        newF2.html("Flavor 2: " + flavor2);
+        var newF3 = $("<span>");
+        newF3.html("Flavor 3: " + flavor3);
+        p.append(newF1);
+        p.append(newF2);
+        p.append(newF3);
+    }
+
+    var newPrice = $("<span>");
+    newPrice.html("$" + price);
+    p.append(newPrice);
+
+    var newQuant = $("<span>", {"class": "cart-quantity"});
+    newQuant.html(quantity);
+
+    var newItemTotal = $("<span>", {"class": "cart-itemTotal"});
+    newItemTotal.html("$" + quantity*price);
+
+    var button = $('<button/>',
+    {
+        text: 'Remove',
+        "class": "cart-remove"
+    });
+    button.click(function(){
+        wishlist = JSON.parse(localStorage.getItem("wishlist"));
+        wishlist.splice($(this).parent().index(),1);
+        localStorage.setItem("wishlist", JSON.stringify(wishlist));
+        $(this).parent().remove();
+        //console.log("removed wishlist");
+    });
+
+    div.append(newImg);
+    div.append(p);
+    div.append(newQuant);
+    div.append(newItemTotal);
+    div.append(button);
+    $(".wishlist-container").append(div);
 }
 
 //populate shopping cart page
 //update total price
 //update number of items
-function updateInfo() {
+function populateCart() {
     cart = JSON.parse(localStorage.getItem("cart"));
     var subtotal = 0;
     var count = 0;
     cart.forEach(function(item){
-        makeCartItem(
+        var cartItem = makeCartItem(
             item.img,item.type,item.flavor1,
             item.flavor2,item.flavor3,
             item.quantity,item.price);
+        subtotal += item.price*item.quantity;
+        count += 1;
+        $(".cart-container").append(cartItem);
+    });
+    $("#cart-subTotal").html("$" + subtotal);
+    $("#cart-totalPrice").html("$" + subtotal);
+    $("#nav-cart-quantity").html(count);
+}
+
+function updateCartQuant() {
+    cart = JSON.parse(localStorage.getItem("cart"));
+    var subtotal = 0;
+    var count = 0;
+    cart.forEach(function(item){
         subtotal += item.price*item.quantity;
         count += 1;
     });
     $("#cart-subTotal").html("$" + subtotal);
     $("#cart-totalPrice").html("$" + subtotal);
     $("#nav-cart-quantity").html(count);
+}
+
+//populate wishlist page
+function updateWishlist() {
+    wishlist = JSON.parse(localStorage.getItem("wishlist"));
+    wishlist.forEach(function(item){
+        makeWishedItem(
+            item.img,item.type,item.flavor1,
+            item.flavor2,item.flavor3,
+            item.quantity,item.price);
+    });
 }
 
 /*** Document Load ****/
@@ -204,7 +293,25 @@ $(document).ready(function() {
             localStorage.setItem("cart", JSON.stringify(cart));
             //console.log(localStorage.getItem("cart"));
         }
-        updateInfo();
+        populateCart();
+    });
+
+    $("#button-wish").click(function() {
+        getSelection();
+
+        //add selected to wishlist
+        wishlist = JSON.parse(localStorage.getItem("wishlist"));
+        if(wishlist === null){
+            wishlist = [selection];
+            localStorage.setItem("wishlist", JSON.stringify(wishlist));
+            console.log("set wishlist: " + localStorage.getItem("wishlist"));
+        }
+        else{
+            wishlist.push(selection);
+            localStorage.setItem("wishlist", JSON.stringify(wishlist));
+            console.log(localStorage.getItem("wishlist"));
+        }
+        updateWishlist();
     });
 
     //populate shopping cart page
@@ -215,6 +322,14 @@ $(document).ready(function() {
         $("#cart-subTotal").html("$0");
     }
     else{
-        updateInfo();
+        populateCart();
+    }
+
+    if(wishlist === null){
+        console.log("cart empty");
+        $("#cart-subTotal").html("$0");
+    }
+    else{
+        updateWishlist();
     }
 });
